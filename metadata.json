@@ -1,0 +1,6 @@
+{
+  "name": "GDB Engine",
+  "description": "Enterprise-grade GDB-SPEC v3.50 database engine implementation with bounded memory governor, async I/O, WAL durability, and verification harness.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

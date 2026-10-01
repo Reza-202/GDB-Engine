@@ -1,0 +1,25 @@
+{
+  "baselines": [
+    {
+      "baseline_id": "BASELINE-GDB-v3.50-BOOTSTRAP-REV1",
+      "spec_version": "v3.50",
+      "timestamp": "2026-10-01T00:00:00Z",
+      "certified_by": "GDB-Certification-Authority-v1",
+      "revision_tag": "rev-bootstrap-001",
+      "requirements_verified": [
+        "REQ-BOOTSTRAP-001",
+        "REQ-MEM-GOV-001",
+        "REQ-STORAGE-PAGE-001",
+        "REQ-ASYNC-IO-001",
+        "REQ-WAL-RECOVERY-001",
+        "REQ-SECURITY-BOUNDS-001",
+        "REQ-TELEMETRY-001",
+        "REQ-VERIFY-CHAIN-001"
+      ],
+      "test_suite_execution_id": "RUN-BOOTSTRAP-INITIAL-001",
+      "evidence_bundle": "EVID-BOOTSTRAP-001",
+      "status": "ACTIVE_CERTIFIED",
+      "notes": "Initial bootstrap baseline certified after full automated test execution and evidence validation."
+    }
+  ]
+}
