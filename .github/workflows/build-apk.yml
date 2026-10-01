@@ -11,6 +11,9 @@ on:
       - master
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -105,6 +108,19 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Publish Direct APK to GitHub Releases
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="apk-latest"
+          echo "Publishing direct APK download to GitHub Releases with tag $TAG..."
+          gh release delete "$TAG" --yes --cleanup-tag || true
+          gh release create "$TAG" output_apk/gdb-engine-debug.apk \
+            --title "📱 GDB Engine APK (Direct Download)" \
+            --notes "Direct APK download ready to install directly on Android devices. Generated from commit $GITHUB_SHA." \
+            --latest
+
       - name: Build Summary
         if: always()
         run: |
@@ -112,8 +128,9 @@ jobs:
           echo "- **Spec Version:** \`GDB-SPEC v3.50 — MASTER COMPLETE\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Certified Baseline:** \`BASELINE-GDB-v3.50-BOOTSTRAP-REV1\`" >> $GITHUB_STEP_SUMMARY
           if [ -f output_apk/gdb-engine-debug.apk ]; then
-            echo "- **Status:** ✅ Build Succeeded & Tests Passed" >> $GITHUB_STEP_SUMMARY
-            echo "- **Artifact:** \`gdb-engine-debug.apk\` available for download in Artifacts tab" >> $GITHUB_STEP_SUMMARY
+            echo "- **Status:** ✅ Build Succeeded & All Tests Passed" >> $GITHUB_STEP_SUMMARY
+            echo "- **Direct Download:** Check the repository [Releases](../../releases) tab for raw \`gdb-engine-debug.apk\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Artifact Download:** \`gdb-engine-debug-apk\` (ZIP) available in Artifacts table below" >> $GITHUB_STEP_SUMMARY
           else
             echo "- **Status:** ❌ Build Failed" >> $GITHUB_STEP_SUMMARY
           fi
