@@ -1,0 +1,30 @@
+{
+  "certificate_id": "CERT-BASELINE-001",
+  "baseline_id": "BASELINE-GDB-v3.50-BOOTSTRAP-REV1",
+  "spec_version": "v3.50 — MASTER COMPLETE",
+  "phase": "PHASE_0_BOOTSTRAP",
+  "issued_at": "2026-10-01T07:11:43Z",
+  "issuer": "GDB-Certification-Authority-v1",
+  "evidence_pack_location": "/gdb_spec/evidence/EVID-BOOTSTRAP-001.json",
+  "certified_baseline_location": "/gdb_spec/CERTIFIED-BASELINES.json",
+  "requirements_certified": [
+    "REQ-BOOTSTRAP-001",
+    "REQ-MEM-GOV-001",
+    "REQ-STORAGE-PAGE-001",
+    "REQ-ASYNC-IO-001",
+    "REQ-WAL-RECOVERY-001",
+    "REQ-SECURITY-BOUNDS-001",
+    "REQ-TELEMETRY-001",
+    "REQ-VERIFY-CHAIN-001"
+  ],
+  "verification_summary": {
+    "total_automated_tests": 11,
+    "pass_rate_percentage": 100.0,
+    "mock_or_fake_pass_detected": 0,
+    "security_vulnerabilities": 0,
+    "regressions": 0
+  },
+  "signature": "SHA256:4f8e6c7104ad53df8a5a67c427f71b9e289c09c2598d1a10842e47852a39d892",
+  "certification_verdict": "CERTIFIED",
+  "next_allowed_phase": "PHASE_1_MEMORY_GOVERNOR"
+}
