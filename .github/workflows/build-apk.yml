@@ -29,24 +29,51 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Prepare Environment & Secrets
         run: |
-          # Ensure .env exists for the Secrets Gradle Plugin
+          set -e
+          echo "Preparing environment..."
+
+          # 1. Ensure .env exists for the Secrets Gradle Plugin
           if [ ! -f .env ]; then
             echo "Creating .env from .env.example..."
             cp .env.example .env
           fi
 
-          # Restore debug keystore if base64 encoded file exists
-          if [ -f debug.keystore.base64 ]; then
-            echo "Decoding debug.keystore from base64..."
-            base64 -d debug.keystore.base64 > debug.keystore
+          # 2. Restore or generate debug.keystore required by app/build.gradle.kts
+          if [ ! -f debug.keystore ] || [ ! -s debug.keystore ]; then
+            if [ -f debug.keystore.base64 ]; then
+              echo "Decoding debug.keystore from base64..."
+              base64 -d debug.keystore.base64 > debug.keystore || true
+            fi
           fi
 
-          # Grant execution permission to Gradle wrapper
+          if [ ! -f debug.keystore ] || [ ! -s debug.keystore ]; then
+            echo "Generating standard debug.keystore via keytool..."
+            keytool -genkey -v \
+              -keystore debug.keystore \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+          # 3. Ensure gradlew wrapper exists and is executable
+          if [ ! -f gradlew ]; then
+            echo "Generating Gradle wrapper..."
+            gradle wrapper
+          fi
           chmod +x gradlew
+
+          echo "Environment preparation complete."
+          ls -la debug.keystore gradlew .env
 
       - name: Run GDB-SPEC Automated Unit & Verification Tests
         run: |
@@ -56,10 +83,11 @@ jobs:
         run: |
           ./gradlew :app:assembleDebug --no-daemon --stacktrace
 
-      - name: Locate & Rename APK
+      - name: Locate & Package APK
         run: |
           mkdir -p output_apk
-          find app/build/outputs/apk/debug/ -name "*.apk" -exec cp {} output_apk/gdb-engine-debug.apk \;
+          find app/build/outputs/apk/debug/ -type f -name "*.apk" -exec cp {} output_apk/gdb-engine-debug.apk \;
+          echo "Output APK details:"
           ls -lh output_apk/
 
       - name: Upload APK Artifact
@@ -71,9 +99,14 @@ jobs:
           retention-days: 30
 
       - name: Build Summary
+        if: always()
         run: |
-          echo "### 🚀 GDB Engine APK Build Completed" >> $GITHUB_STEP_SUMMARY
-          echo "- **Artifact Name:** \`gdb-engine-debug.apk\`" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 GDB Engine APK Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **Spec Version:** \`GDB-SPEC v3.50 — MASTER COMPLETE\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Certified Baseline:** \`BASELINE-GDB-v3.50-BOOTSTRAP-REV1\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status:** ✅ Tests Passed & APK Ready for Installation" >> $GITHUB_STEP_SUMMARY
+          if [ -f output_apk/gdb-engine-debug.apk ]; then
+            echo "- **Status:** ✅ Build Succeeded & Tests Passed" >> $GITHUB_STEP_SUMMARY
+            echo "- **Artifact:** \`gdb-engine-debug.apk\` available for download in Artifacts tab" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Status:** ❌ Build Failed" >> $GITHUB_STEP_SUMMARY
+          fi
