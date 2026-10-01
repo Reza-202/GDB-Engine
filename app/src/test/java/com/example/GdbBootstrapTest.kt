@@ -10,26 +10,30 @@ import java.io.File
 
 class GdbBootstrapTest {
 
+    private fun findSpecFile(relativePath: String): File? {
+        var current: File? = File(System.getProperty("user.dir") ?: ".").canonicalFile
+        for (i in 0..5) {
+            if (current == null) break
+            val candidate = File(current, relativePath)
+            if (candidate.exists()) return candidate
+            current = current.parentFile
+        }
+        return null
+    }
+
     @Test
     fun `test TEST-BOOTSTRAP-001 Registry and governance integrity`() {
         assertNotNull(GdbConstants.SPEC_VERSION)
         assertEquals("v3.50 — MASTER COMPLETE", GdbConstants.SPEC_VERSION)
         assertEquals("BASELINE-GDB-v3.50-BOOTSTRAP-REV1", GdbConstants.CURRENT_CERTIFIED_BASELINE)
 
-        // Verify root files exist
-        val userDir = File(System.getProperty("user.dir") ?: ".")
-        val regFile = File(userDir, "gdb_spec/REQUIREMENT_REGISTRY.json")
-        val stateFile = File(userDir, "gdb_spec/GDB-IMPLEMENTATION-STATE.json")
-        val baseFile = File(userDir, "gdb_spec/CERTIFIED-BASELINES.json")
+        val actualReg = findSpecFile("gdb_spec/REQUIREMENT_REGISTRY.json")
+        val actualState = findSpecFile("gdb_spec/GDB-IMPLEMENTATION-STATE.json")
+        val actualBase = findSpecFile("gdb_spec/CERTIFIED-BASELINES.json")
 
-        // If run from within app module or root
-        val actualReg = if (regFile.exists()) regFile else File(userDir.parentFile, "gdb_spec/REQUIREMENT_REGISTRY.json")
-        val actualState = if (stateFile.exists()) stateFile else File(userDir.parentFile, "gdb_spec/GDB-IMPLEMENTATION-STATE.json")
-        val actualBase = if (baseFile.exists()) baseFile else File(userDir.parentFile, "gdb_spec/CERTIFIED-BASELINES.json")
-
-        assertTrue("REQUIREMENT_REGISTRY.json must exist", actualReg.exists())
-        assertTrue("GDB-IMPLEMENTATION-STATE.json must exist", actualState.exists())
-        assertTrue("CERTIFIED-BASELINES.json must exist", actualBase.exists())
+        assertNotNull("REQUIREMENT_REGISTRY.json must exist in project tree", actualReg)
+        assertNotNull("GDB-IMPLEMENTATION-STATE.json must exist in project tree", actualState)
+        assertNotNull("CERTIFIED-BASELINES.json must exist in project tree", actualBase)
     }
 
     @Test

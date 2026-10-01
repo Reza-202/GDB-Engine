@@ -79,6 +79,13 @@ jobs:
         run: |
           ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
 
+      - name: Upload Test Report If Failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: app/build/reports/tests/testDebugUnitTest/
+
       - name: Build Debug APK
         run: |
           ./gradlew :app:assembleDebug --no-daemon --stacktrace
