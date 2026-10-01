@@ -1,0 +1,79 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Test APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Prepare Environment & Secrets
+        run: |
+          # Ensure .env exists for the Secrets Gradle Plugin
+          if [ ! -f .env ]; then
+            echo "Creating .env from .env.example..."
+            cp .env.example .env
+          fi
+
+          # Restore debug keystore if base64 encoded file exists
+          if [ -f debug.keystore.base64 ]; then
+            echo "Decoding debug.keystore from base64..."
+            base64 -d debug.keystore.base64 > debug.keystore
+          fi
+
+          # Grant execution permission to Gradle wrapper
+          chmod +x gradlew
+
+      - name: Run GDB-SPEC Automated Unit & Verification Tests
+        run: |
+          ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
+
+      - name: Build Debug APK
+        run: |
+          ./gradlew :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Locate & Rename APK
+        run: |
+          mkdir -p output_apk
+          find app/build/outputs/apk/debug/ -name "*.apk" -exec cp {} output_apk/gdb-engine-debug.apk \;
+          ls -lh output_apk/
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdb-engine-debug-apk
+          path: output_apk/gdb-engine-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Build Summary
+        run: |
+          echo "### 🚀 GDB Engine APK Build Completed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Artifact Name:** \`gdb-engine-debug.apk\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Spec Version:** \`GDB-SPEC v3.50 — MASTER COMPLETE\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Certified Baseline:** \`BASELINE-GDB-v3.50-BOOTSTRAP-REV1\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ✅ Tests Passed & APK Ready for Installation" >> $GITHUB_STEP_SUMMARY
